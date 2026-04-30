@@ -22,7 +22,10 @@ const addRepairNoteWorkflow = createWorkflow(
 
 // POST /admin/repairs/:id/notes - Add note to repair ticket
 export async function POST(
-  req: AuthenticatedMedusaRequest<{ id: string }>,
+  req: AuthenticatedMedusaRequest<{
+    content: string
+    is_internal: boolean
+  }>,
   res: MedusaResponse
 ) {
   const { content, is_internal } = req.validatedBody

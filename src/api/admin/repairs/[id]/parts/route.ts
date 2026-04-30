@@ -3,17 +3,17 @@ import { addRepairPartsWorkflow } from "../../../../../workflows/add-repair-part
 
 // POST /admin/repairs/:id/parts - Add parts to repair ticket
 export async function POST(
-  req: MedusaRequest<{ id: string }>,
+  req: MedusaRequest<{
+    variant_ids: string[]
+  }>,
   res: MedusaResponse
 ) {
-  const { variant_ids, customer_id, region_id } = req.validatedBody
+  const { variant_ids } = req.validatedBody
 
   const { result } = await addRepairPartsWorkflow(req.scope).run({
     input: {
       repair_ticket_id: req.params.id,
       variant_ids,
-      customer_id,
-      region_id,
     },
   })
 

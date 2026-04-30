@@ -26,7 +26,13 @@ export async function GET(req: MedusaRequest, res: MedusaResponse) {
 }
 
 // POST /admin/repairs - Create a new repair ticket
-export async function POST(req: MedusaRequest, res: MedusaResponse) {
+export async function POST(
+  req: MedusaRequest<{
+    device: any
+    ticket: any
+  }>,
+  res: MedusaResponse
+) {
   const { device, ticket } = req.validatedBody
 
   const { result } = await createRepairTicketWorkflow(req.scope).run({

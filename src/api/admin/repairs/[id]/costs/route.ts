@@ -21,7 +21,12 @@ const updateRepairCostsWorkflow = createWorkflow(
 
 // POST /admin/repairs/:id/costs - Update repair costs
 export async function POST(
-  req: MedusaRequest<{ id: string }>,
+  req: MedusaRequest<{
+    parts_estimate?: number
+    labor_estimate?: number
+    parts_actual?: number
+    labor_actual?: number
+  }>,
   res: MedusaResponse
 ) {
   const { parts_estimate, labor_estimate, parts_actual, labor_actual } = req.validatedBody

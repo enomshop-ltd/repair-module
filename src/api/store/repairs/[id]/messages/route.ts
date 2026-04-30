@@ -40,7 +40,9 @@ export async function GET(
 
 // POST /store/repairs/:id/messages - Send message to repair chat
 export async function POST(
-  req: AuthenticatedMedusaRequest<{ id: string }>,
+  req: AuthenticatedMedusaRequest<{
+    message: string
+  }>,
   res: MedusaResponse
 ) {
   const { message } = req.validatedBody

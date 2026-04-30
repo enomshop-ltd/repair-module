@@ -23,7 +23,14 @@ const addRepairMediaWorkflow = createWorkflow(
 
 // POST /admin/repairs/:id/media - Add media to repair ticket
 export async function POST(
-  req: MedusaRequest<{ id: string }>,
+  req: MedusaRequest<{
+    file_url: string
+    file_name: string
+    file_type: "image" | "video"
+    mime_type?: string
+    file_size?: number
+    description?: string
+  }>,
   res: MedusaResponse
 ) {
   const { file_url, file_name, file_type, mime_type, file_size, description } = req.validatedBody

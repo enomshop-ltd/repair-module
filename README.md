@@ -465,11 +465,12 @@ export async function POST(req: any, res: any) {
 
 ## Storefront Integration
 
-The Repair Module includes a complete storefront interface for customer repair tracking.
+The Repair Module includes a complete storefront interface for customer repair tracking. The storefront pages have been converted from Next.js to Freshjs v2.3 to easily drop into existing Freshjs storefronts.
 
 ### Storefront Route
 
-**Location:** `/us/repairs/track`
+**Location:** `routes/repairs/track.tsx`
+**Client Island:** `routes/repairs/(_islands)/TrackRepairIsland.tsx`
 
 **Features:**
 - Serial number search to find repair tickets
@@ -479,13 +480,15 @@ The Repair Module includes a complete storefront interface for customer repair t
 - Timeline with ETC and warranty info
 - Customer-visible notes and updates
 - Inline cost approval button
+- Built-in Freshjs partial support for SPA-like navigation
+- Seamless Github-style loading bar via `islands/TopProgressBarIsland.tsx`
 
 ### Adding to Navigation
 
-Add a link to your storefront navigation:
+Add a link to your Freshjs storefront navigation using `f-client-nav` for partial SPA navigation:
 
 ```tsx
-<Link to="/us/repairs/track">Track Repair</Link>
+<a href="/repairs/track" f-client-nav>Track Repair</a>
 ```
 
 ### QR Code Integration
@@ -563,6 +566,17 @@ Technician badges appear:
 - On repair detail page header
 - In the active repairs widget
 - In customer-facing status updates (optional)
+
+## Recent Updates / Changelog (April 2026)
+
+1. **Storefront Optimization (Fresh.js):** Converted the Next.js storefront implementation to Fresh.js v2.3+ to ensure seamless drop-in compatibility with Deno/Fresh environments.
+2. **Co-located Islands:** Centralized routing and island components within `storefront/routes/repairs/` (e.g. `(_islands)/TrackRepairIsland.tsx`), allowing isolated drag-and-drop capability into existing applications without muddying the global islands folder.
+3. **Partial Navigation UI:** Implemented a GitHub-style `TopProgressBarIsland` to handle client-side routing events and partial loading transitions.
+4. **Backend API Types Fixes:** Corrected strict TypeScript validation typings in all Medusa `/admin` and `/store` routes (`req.validatedBody` handling) for media uploads, cost breakdowns, status update, parts, notes, and messages endpoints.
+5. **Workflow Dependencies Fix:** Resolved filename path issues for `update-repair-status-workflow` and cleaned up input props for `AddRepairPartsWorkflowInput` to match workflow requirements precisely.
+6. **Middleware Configuration:** Consolidated and fixed middleware import paths into `src/api/middlewares.ts`.
+7. **Package Cleanup:** Removed unused Next.js-centric and Tanstack dependencies (`@tanstack/react-query`, `@tanstack/react-router`) from `package.json` to keep the plugin lean.
+8. **Build Tooling:** Updated `tsconfig.json` to explicitly handle `.tsx` component parsing correctly by including the new `storefront` folder.
 
 ## Next Steps
 

@@ -3,7 +3,11 @@ import { updateRepairStatusWorkflow } from "../../../../../workflows/update-repa
 
 // POST /admin/repairs/:id/status - Update repair status
 export async function POST(
-  req: MedusaRequest<{ id: string }>,
+  req: MedusaRequest<{
+    status: "received" | "diagnosing" | "awaiting_approval" | "repairing" | "ready" | "completed" | "cancelled"
+    estimated_completion?: string
+    previous_status?: string
+  }>,
   res: MedusaResponse
 ) {
   const { status, estimated_completion, previous_status } = req.validatedBody

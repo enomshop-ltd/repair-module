@@ -21,7 +21,9 @@ const addRepairUpdateWorkflow = createWorkflow(
 
 // POST /admin/repairs/:id/messages - Add message to repair chat
 export async function POST(
-  req: AuthenticatedMedusaRequest<{ id: string }>,
+  req: AuthenticatedMedusaRequest<{
+    message: string
+  }>,
   res: MedusaResponse
 ) {
   const { message } = req.validatedBody
