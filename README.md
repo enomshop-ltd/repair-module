@@ -1,5 +1,35 @@
 # Repair Module API Documentation
 
+## Installation & Registration
+
+1. Add the plugin to your `medusa-config.ts` (Medusa v2):
+
+```typescript
+import { defineConfig } from '@medusajs/framework/utils'
+
+export default defineConfig({
+  projectConfig: {
+    // ... 
+  },
+  modules: [
+    {
+      resolve: "@enomshop/repair-module",
+    }
+  ]
+})
+```
+
+2. Run database migrations to install the new models natively into your Medusa application:
+```bash
+npx medusa db:migrate
+```
+
+## Accessing the Admin Backend
+
+Because this plugin includes an admin extension (`src/admin/routes/dashboard/repairs/page.tsx`), once properly registered and built along with your Medusa project, a new **Repairs** item with a Wrench icon will automatically appear in your Medusa Admin portal sidebar under Dashboard.
+
+You can also browse directly to `/app/dashboard/repairs` in your admin dashboard.
+
 ## Overview
 Complete Repair Management System for device repair shops with customer tracking, parts management, chat functionality, cost approval flow, and warranty tracking.
 
@@ -515,13 +545,13 @@ The Repair Module includes complete admin dashboard integration.
 
 ### Admin Pages
 
-1. **Repair List Page** (`/app/repairs`)
+1. **Repair List Page** (`/app/dashboard/repairs`)
    - View all repair tickets
    - Search and filter by status, technician, serial number
    - Quick status overview with badges
    - Links to detail pages
 
-2. **Repair Detail Page** (`/app/repairs/:id`)
+2. **Repair Detail Page** (`/app/dashboard/repairs/:id`)
    - Full ticket information with device details
    - Technician assignment with badge display
    - Status management

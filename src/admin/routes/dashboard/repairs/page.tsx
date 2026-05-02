@@ -148,7 +148,7 @@ const RepairsPage = () => {
                   {new Date(ticket.created_at).toLocaleDateString()}
                 </Table.Cell>
                 <Table.Cell>
-                  <a href={`/app/repairs/${ticket.id}`}>
+                  <a href={`/app/dashboard/repairs/${ticket.id}`}>
                     <Button variant="secondary" size="small">View</Button>
                   </a>
                 </Table.Cell>

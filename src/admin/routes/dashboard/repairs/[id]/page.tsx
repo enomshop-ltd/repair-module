@@ -226,7 +226,7 @@ const RepairDetailPage = () => {
               </Text>
             )}
           </div>
-          <a href="/app/repairs">
+          <a href="/app/dashboard/repairs">
             <Button variant="secondary">Back to List</Button>
           </a>
         </div>
