@@ -20,11 +20,29 @@ const RepairsPage = () => {
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
 
-  // Create Ticket Modal State
   const [createModalOpen, setCreateModalOpen] = useState(false)
   const [isCreating, setIsCreating] = useState(false)
   const [newDevice, setNewDevice] = useState({ serial_number: "", model_name: "", brand: "", customer_id: "", imei: "", condition: "" })
   const [newTicket, setNewTicket] = useState({ customer_id: "", issue_description: "", accessories: "" })
+  
+  const [customers, setCustomers] = useState<any[]>([])
+  const [loadingCustomers, setLoadingCustomers] = useState(false)
+
+  const loadCustomers = () => {
+    setLoadingCustomers(true)
+    fetch(`/admin/customers`, {
+      credentials: "include",
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setCustomers(data.customers || [])
+        setLoadingCustomers(false)
+      })
+      .catch((err) => {
+        console.error("Failed to load customers:", err)
+        setLoadingCustomers(false)
+      })
+  }
 
   const loadTickets = () => {
     setLoading(true)
@@ -44,6 +62,7 @@ const RepairsPage = () => {
 
   useEffect(() => {
     loadTickets()
+    loadCustomers()
   }, [])
 
   const handleCreateTicket = async () => {
@@ -161,11 +180,25 @@ const RepairsPage = () => {
                   <Heading level="h2" className="text-lg">Ticket Details</Heading>
                   <div className="grid grid-cols-1 gap-4">
                     <div className="flex flex-col gap-y-2">
-                      <Label htmlFor="customer_id">Customer ID</Label>
-                      <Input id="customer_id" value={newTicket.customer_id} onChange={(e) => {
-                        setNewTicket({...newTicket, customer_id: e.target.value});
-                        setNewDevice({...newDevice, customer_id: e.target.value});
-                      }} placeholder="cus_..." />
+                      <Label htmlFor="customer_id">Customer</Label>
+                      <Select 
+                        value={newTicket.customer_id} 
+                        onValueChange={(val) => {
+                          setNewTicket({...newTicket, customer_id: val});
+                          setNewDevice({...newDevice, customer_id: val});
+                        }} 
+                      >
+                        <Select.Trigger>
+                          <Select.Value placeholder={loadingCustomers ? "Loading..." : "Select a customer"} />
+                        </Select.Trigger>
+                        <Select.Content>
+                          {customers.map((customer) => (
+                            <Select.Item key={customer.id} value={customer.id}>
+                              {customer.first_name || customer.last_name ? `${customer.first_name || ""} ${customer.last_name || ""}`.trim() : "No Name"} ({customer.email})
+                            </Select.Item>
+                          ))}
+                        </Select.Content>
+                      </Select>
                     </div>
                     <div className="flex flex-col gap-y-2">
                       <Label htmlFor="issue_description">Issue Description *</Label>

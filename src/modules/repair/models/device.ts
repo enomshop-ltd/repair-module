@@ -16,3 +16,4 @@ const Device = model.define("device", {
 })
 
 export default Device
+

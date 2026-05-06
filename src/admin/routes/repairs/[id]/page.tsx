@@ -459,6 +459,7 @@ const RepairDetailPage = () => {
 }
 
 export const config = defineRouteConfig({
+  label: "Repair Detail",
 })
 
 export default RepairDetailPage
