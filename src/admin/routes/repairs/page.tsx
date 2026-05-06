@@ -1,5 +1,5 @@
 import { defineRouteConfig } from "@medusajs/admin-sdk"
-import { Container, Heading, Table, Badge, Button, Input, Select, Drawer } from "@medusajs/ui"
+import { Container, Heading, Table, Badge, Button, Input, Select, FocusModal, Label, Textarea } from "@medusajs/ui"
 import { useEffect, useState } from "react"
 import { Wrench } from "@medusajs/icons"
 
@@ -19,12 +19,12 @@ const RepairsPage = () => {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("all")
-  const [isDrawerOpen, setIsDrawerOpen] = useState(false)
-  const [newTicket, setNewTicket] = useState({
-    issue_description: "",
-    technician_name: "",
-    total_estimate: "",
-  })
+
+  // Create Ticket Modal State
+  const [createModalOpen, setCreateModalOpen] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
+  const [newDevice, setNewDevice] = useState({ serial_number: "", model_name: "", brand: "", customer_id: "", imei: "", condition: "" })
+  const [newTicket, setNewTicket] = useState({ customer_id: "", issue_description: "", accessories: "" })
 
   const loadTickets = () => {
     setLoading(true)
@@ -42,43 +42,54 @@ const RepairsPage = () => {
       })
   }
 
-  const handleCreateTicket = async () => {
-    try {
-      const response = await fetch("/admin/repairs", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          issue_description: newTicket.issue_description,
-          technician_name: newTicket.technician_name || undefined,
-          total_estimate: parseFloat(newTicket.total_estimate) * 100,
-        }),
-      })
-
-      if (response.ok) {
-        setIsDrawerOpen(false)
-        setNewTicket({
-          issue_description: "",
-          technician_name: "",
-          total_estimate: "",
-        })
-        loadTickets()
-      } else {
-        console.error("Failed to create repair ticket")
-      }
-    } catch (error) {
-      console.error("Error creating repair ticket:", error)
-    }
-  }
-
   useEffect(() => {
     loadTickets()
   }, [])
 
+  const handleCreateTicket = async () => {
+    try {
+      setIsCreating(true)
+      const res = await fetch(`/admin/repairs`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          device: {
+            serial_number: newDevice.serial_number,
+            model_name: newDevice.model_name,
+            brand: newDevice.brand,
+            customer_id: newDevice.customer_id || undefined,
+            imei: newDevice.imei || undefined,
+            condition: newDevice.condition || undefined,
+          },
+          ticket: {
+            customer_id: newTicket.customer_id || undefined,
+            issue_description: newTicket.issue_description,
+            accessories: newTicket.accessories || undefined,
+          }
+        }),
+      })
+      
+      const data = await res.json()
+      
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to create repair ticket")
+      }
+      
+      setCreateModalOpen(false)
+      setNewDevice({ serial_number: "", model_name: "", brand: "", customer_id: "", imei: "", condition: "" })
+      setNewTicket({ customer_id: "", issue_description: "", accessories: "" })
+      loadTickets()
+    } catch (err) {
+      console.error(err)
+      alert("Error: " + (err instanceof Error ? err.message : String(err)))
+    } finally {
+      setIsCreating(false)
+    }
+  }
+
   const getStatusColor = (status: string) => {
-    const colors: Record<string, any> = {
+    const colors: Record<string, "grey" | "blue" | "orange" | "green" | "red"> = {
       received: "grey",
       diagnosing: "blue",
       awaiting_approval: "orange",
@@ -91,7 +102,7 @@ const RepairsPage = () => {
   }
 
   const filteredTickets = tickets.filter((ticket) => {
-    const matchesSearch =
+    const matchesSearch = 
       ticket.ticket_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ticket.issue_description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (ticket.technician_name?.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -103,19 +114,88 @@ const RepairsPage = () => {
     <Container>
       <div className="flex items-center justify-between mb-6">
         <Heading level="h1">Repair Tickets</Heading>
-        <Button onClick={() => setIsDrawerOpen(true)}>Create Repair Ticket</Button>
+        <FocusModal open={createModalOpen} onOpenChange={setCreateModalOpen}>
+          <FocusModal.Trigger asChild>
+            <Button variant="primary">Create Repair Ticket</Button>
+          </FocusModal.Trigger>
+          <FocusModal.Content>
+            <FocusModal.Header>
+              <Button variant="primary" onClick={handleCreateTicket} isLoading={isCreating}>
+                Save Ticket
+              </Button>
+            </FocusModal.Header>
+            <FocusModal.Body className="flex flex-col items-center py-16 overflow-y-auto">
+              <div className="flex w-full max-w-lg flex-col gap-y-8">
+                <div className="flex flex-col gap-y-2">
+                  <Heading>Create Repair Ticket</Heading>
+                  <p className="text-ui-fg-subtle text-sm">Add a new device and repair ticket.</p>
+                </div>
+                
+                <div className="flex flex-col gap-y-4">
+                  <Heading level="h2" className="text-lg">Device Details</Heading>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex flex-col gap-y-2">
+                      <Label htmlFor="brand">Brand *</Label>
+                      <Input id="brand" value={newDevice.brand} onChange={(e) => setNewDevice({...newDevice, brand: e.target.value})} placeholder="Apple" />
+                    </div>
+                    <div className="flex flex-col gap-y-2">
+                      <Label htmlFor="model_name">Model Name *</Label>
+                      <Input id="model_name" value={newDevice.model_name} onChange={(e) => setNewDevice({...newDevice, model_name: e.target.value})} placeholder="iPhone 13 Pro" />
+                    </div>
+                    <div className="flex flex-col gap-y-2">
+                      <Label htmlFor="serial_number">Serial Number *</Label>
+                      <Input id="serial_number" value={newDevice.serial_number} onChange={(e) => setNewDevice({...newDevice, serial_number: e.target.value})} placeholder="SN12345678" />
+                    </div>
+                    <div className="flex flex-col gap-y-2">
+                      <Label htmlFor="imei">IMEI</Label>
+                      <Input id="imei" value={newDevice.imei} onChange={(e) => setNewDevice({...newDevice, imei: e.target.value})} placeholder="Optional" />
+                    </div>
+                    <div className="flex flex-col gap-y-2 col-span-2">
+                      <Label htmlFor="condition">Device Condition</Label>
+                      <Input id="condition" value={newDevice.condition} onChange={(e) => setNewDevice({...newDevice, condition: e.target.value})} placeholder="Scratches on screen, etc." />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-y-4">
+                  <Heading level="h2" className="text-lg">Ticket Details</Heading>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="flex flex-col gap-y-2">
+                      <Label htmlFor="customer_id">Customer ID</Label>
+                      <Input id="customer_id" value={newTicket.customer_id} onChange={(e) => {
+                        setNewTicket({...newTicket, customer_id: e.target.value});
+                        setNewDevice({...newDevice, customer_id: e.target.value});
+                      }} placeholder="cus_..." />
+                    </div>
+                    <div className="flex flex-col gap-y-2">
+                      <Label htmlFor="issue_description">Issue Description *</Label>
+                      <Textarea id="issue_description" value={newTicket.issue_description} onChange={(e) => setNewTicket({...newTicket, issue_description: e.target.value})} placeholder="Screen is cracked and battery draining fast." />
+                    </div>
+                    <div className="flex flex-col gap-y-2">
+                      <Label htmlFor="accessories">Accessories Included</Label>
+                      <Input id="accessories" value={newTicket.accessories} onChange={(e) => setNewTicket({...newTicket, accessories: e.target.value})} placeholder="Black case, charging cable" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </FocusModal.Body>
+          </FocusModal.Content>
+        </FocusModal>
       </div>
 
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-4 mb-6">
         <Input
-          placeholder="Search by ticket #, issue, or technician..."
+          placeholder="Search tickets..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           className="flex-1"
         />
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <Select
+          value={statusFilter}
+          onValueChange={setStatusFilter}
+        >
           <Select.Trigger>
-            <Select.Value />
+            <Select.Value placeholder="Filter by status" />
           </Select.Trigger>
           <Select.Content>
             <Select.Item value="all">All Statuses</Select.Item>
@@ -131,11 +211,10 @@ const RepairsPage = () => {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center h-64">
-          <p>Loading repair tickets...</p>
-        </div>
+        <div className="text-center py-12">Loading repair tickets...</div>
       ) : filteredTickets.length === 0 ? (
-        <div className="flex items-center justify-center h-64">
+        <div className="text-center py-12 text-ui-fg-subtle">
+          <Wrench className="mx-auto mb-4" size={48} />
           <p>No repair tickets found</p>
         </div>
       ) : (
@@ -149,93 +228,49 @@ const RepairsPage = () => {
               <Table.HeaderCell>Estimate</Table.HeaderCell>
               <Table.HeaderCell>ETC</Table.HeaderCell>
               <Table.HeaderCell>Created</Table.HeaderCell>
-              <Table.HeaderCell>Actions</Table.HeaderCell>
+              <Table.HeaderCell></Table.HeaderCell>
             </Table.Row>
           </Table.Header>
           <Table.Body>
             {filteredTickets.map((ticket) => (
               <Table.Row key={ticket.id}>
-                <Table.Cell>{ticket.ticket_number}</Table.Cell>
+                <Table.Cell className="font-medium">{ticket.ticket_number}</Table.Cell>
                 <Table.Cell>
-                  <Badge color={getStatusColor(ticket.status)}>
+                  <Badge color={getStatusColor(ticket.status)} size="small">
                     {ticket.status.replace("_", " ")}
                   </Badge>
                 </Table.Cell>
                 <Table.Cell>
                   {ticket.technician_name ? (
-                    <span>{ticket.technician_name}</span>
+                    <Badge color="purple" size="small">
+                      {ticket.technician_name}
+                    </Badge>
                   ) : (
-                    <span className="text-gray-400">Unassigned</span>
+                    <span className="text-ui-fg-muted">Unassigned</span>
                   )}
                 </Table.Cell>
-                <Table.Cell>{ticket.issue_description}</Table.Cell>
+                <Table.Cell className="max-w-xs truncate">
+                  {ticket.issue_description}
+                </Table.Cell>
                 <Table.Cell>${(ticket.total_estimate / 100).toFixed(2)}</Table.Cell>
                 <Table.Cell>
                   {ticket.estimated_completion
                     ? new Date(ticket.estimated_completion).toLocaleDateString()
                     : "-"}
                 </Table.Cell>
-                <Table.Cell>{new Date(ticket.created_at).toLocaleDateString()}</Table.Cell>
                 <Table.Cell>
-                  <a href={`/app/repairs/${ticket.id}`}>View</a>
+                  {new Date(ticket.created_at).toLocaleDateString()}
+                </Table.Cell>
+                <Table.Cell>
+                  <a href={`/app/repairs/${ticket.id}`}>
+                    <Button variant="secondary" size="small">View</Button>
+                  </a>
                 </Table.Cell>
               </Table.Row>
             ))}
           </Table.Body>
         </Table>
       )}
-
-      <Drawer open={isDrawerOpen} onOpenChange={setIsDrawerOpen}>
-        <Drawer.Content>
-          <Drawer.Header>
-            <Drawer.Title>Create Repair Ticket</Drawer.Title>
-          </Drawer.Header>
-          <Drawer.Body className="flex flex-col gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Issue Description *</label>
-              <Input
-                placeholder="Describe the issue..."
-                value={newTicket.issue_description}
-                onChange={(e) =>
-                  setNewTicket({ ...newTicket, issue_description: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Technician Name</label>
-              <Input
-                placeholder="Assign technician (optional)"
-                value={newTicket.technician_name}
-                onChange={(e) =>
-                  setNewTicket({ ...newTicket, technician_name: e.target.value })
-                }
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Estimate (in dollars) *</label>
-              <Input
-                type="number"
-                placeholder="0.00"
-                value={newTicket.total_estimate}
-                onChange={(e) =>
-                  setNewTicket({ ...newTicket, total_estimate: e.target.value })
-                }
-              />
-            </div>
-          </Drawer.Body>
-          <Drawer.Footer>
-            <Button variant="secondary" onClick={() => setIsDrawerOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleCreateTicket}
-              disabled={!newTicket.issue_description || !newTicket.total_estimate}
-            >
-              Create Ticket
-            </Button>
-          </Drawer.Footer>
-        </Drawer.Content>
-      </Drawer>
     </Container>
   )
 }
