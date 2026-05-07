@@ -20,7 +20,7 @@ A complete Repair Management System for Medusa, ideal for device repair shops. F
 ## Changelog
 
 ### v1.3.0 - UI Simplification & Reminders
-- **Unified Timeline:** Merged "Internal Notes" and "Customer Chat" widgets into a single clean timeline view, distinguishing entries by color and labels.
+- **Unified Timeline:** Merged "Internal Notes" and "Customer Chat" widgets into a single clean timeline view, distinguishing entries by color and labels in both the Admin Dashboard and the Fresh.js Storefront.
 - **Customer Reminders:** Replaced the "Print Job Card" and "Print Receipt" buttons with a single "Send Reminder" button.
 - **Nudge Notifications:** The reminder button emits an event (`repair.customer_reminder`) that attempts to message the customer across Email, SMS, and WhatsApp with an action-specific nudge message based on ticket status.
 
