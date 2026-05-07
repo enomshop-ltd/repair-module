@@ -13,7 +13,7 @@ import {
   toast,
 } from "@medusajs/ui";
 import { useEffect, useState } from "react";
-import { ArrowUpRightOnBox, ChatBubbleLeftRight } from "@medusajs/icons";
+import { ArrowUpRightOnBox, ChatBubbleLeftRight, Trash, Bell } from "@medusajs/icons";
 
 // Get id from URL path
 const useParams = () => {
@@ -89,9 +89,8 @@ const RepairDetailPage = () => {
 
   // Form states
   const [newStatus, setNewStatus] = useState("");
-  const [newNote, setNewNote] = useState("");
-  const [isInternal, setIsInternal] = useState(false);
-  const [newMessage, setNewMessage] = useState("");
+  const [unifiedMessage, setUnifiedMessage] = useState("");
+  const [messageType, setMessageType] = useState<"chat" | "internal_note" | "public_note">("chat");
   const [technicianName, setTechnicianName] = useState("");
   const [laborCost, setLaborCost] = useState("");
   const [etc, setEtc] = useState("");
@@ -105,6 +104,7 @@ const RepairDetailPage = () => {
   const [customPartPrice, setCustomPartPrice] = useState("");
 
   const [users, setUsers] = useState<any[]>([]);
+  const [isSendingReminder, setIsSendingReminder] = useState(false);
 
   useEffect(() => {
     // load technicians/users immediately
@@ -220,6 +220,22 @@ const RepairDetailPage = () => {
     }
   };
 
+  const handleRemoveInventoryPart = async (variantId: string) => {
+    try {
+      setIsAddingPart(true);
+      await fetch(`/admin/repairs/${id}/parts/${variantId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      toast.success("Inventory part removed");
+      loadTicket();
+    } catch (err) {
+      toast.error("Failed to remove part");
+    } finally {
+      setIsAddingPart(false);
+    }
+  };
+
   const handleAddCustomPart = async () => {
     if (!customPartName || customPartPrice === "") return;
     try {
@@ -244,39 +260,48 @@ const RepairDetailPage = () => {
     }
   };
 
-  const handleAddNote = async () => {
-    if (!newNote.trim()) return;
+  const handleSendUnified = async () => {
+    if (!unifiedMessage.trim()) return;
     try {
-      await fetch(`/admin/repairs/${id}/notes`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: newNote, is_internal: isInternal }),
-      });
-      toast.success("Note added");
-      setNewNote("");
+      if (messageType === "chat") {
+        await fetch(`/admin/repairs/${id}/messages`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: unifiedMessage }),
+        });
+        toast.success("Message sent");
+      } else {
+        await fetch(`/admin/repairs/${id}/notes`, {
+          method: "POST",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content: unifiedMessage,
+            is_internal: messageType === "internal_note",
+          }),
+        });
+        toast.success("Note added");
+      }
+      setUnifiedMessage("");
       loadTicket();
     } catch (err) {
-      toast.error("Failed to add note");
+      toast.error("Failed to add entry");
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+  const handleSendReminder = async () => {
     try {
-      await fetch(`/admin/repairs/${id}/messages`, {
+      setIsSendingReminder(true);
+      await fetch(`/admin/repairs/${id}/remind`, {
         method: "POST",
         credentials: "include",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: newMessage,
-        }),
       });
-      toast.success("Message sent");
-      setNewMessage("");
-      loadTicket();
+      toast.success("Reminder sent successfully");
     } catch (err) {
-      toast.error("Failed to send message");
+      toast.error("Failed to send reminder");
+    } finally {
+      setIsSendingReminder(false);
     }
   };
 
@@ -382,20 +407,13 @@ const RepairDetailPage = () => {
             )}
           </div>
           <div className="flex items-center gap-2">
-            <a
-              href={`/admin/repairs/${id}/document?type=job_card`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Button
+              variant="secondary"
+              onClick={handleSendReminder}
+              disabled={isSendingReminder}
             >
-              <Button variant="secondary">Print Job Card</Button>
-            </a>
-            <a
-              href={`/admin/repairs/${id}/document?type=receipt`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="secondary">Print Receipt</Button>
-            </a>
+              <Bell className="mr-1" /> Send Reminder
+            </Button>
             <a href="/app/repairs">
               <Button variant="secondary">Back to List</Button>
             </a>
@@ -491,10 +509,22 @@ const RepairDetailPage = () => {
                   {ticket.parts.map((p) => (
                     <div
                       key={p.id}
-                      className="flex justify-between p-2 bg-ui-bg-subtle rounded border text-sm"
+                      className="flex items-center justify-between p-2 bg-ui-bg-subtle rounded border text-sm"
                     >
-                      <Text>{p.title}</Text>
-                      <Text className="text-ui-fg-subtle">{p.sku || "-"}</Text>
+                      <div className="flex flex-col">
+                        <Text>{p.title}</Text>
+                        <Text className="text-ui-fg-subtle text-xs">
+                          {p.sku || "-"}
+                        </Text>
+                      </div>
+                      <Button
+                        variant="transparent"
+                        className="text-ui-fg-muted hover:text-ui-fg-base"
+                        onClick={() => handleRemoveInventoryPart(p.id)}
+                        disabled={isAddingPart}
+                      >
+                        <Trash />
+                      </Button>
                     </div>
                   ))}
                 </div>
@@ -685,110 +715,87 @@ const RepairDetailPage = () => {
             </div>
           </Container>
 
-          {/* Notes */}
-          <Container>
-            <Heading level="h2" className="mb-4">
-              Internal Notes
-            </Heading>
-            <div className="space-y-3">
-              <Textarea
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                placeholder="Add a note..."
-                rows={3}
-              />
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="internal"
-                  checked={isInternal}
-                  onChange={(e) => setIsInternal(e.target.checked)}
-                />
-                <Label htmlFor="internal">
-                  Internal only (not visible to customer)
-                </Label>
-              </div>
-              <Button
-                onClick={handleAddNote}
-                variant="secondary"
-                className="w-full"
-              >
-                Add Note
-              </Button>
-
-              {ticket.notes && ticket.notes.length > 0 && (
-                <div className="mt-4 space-y-2 max-h-64 overflow-y-auto">
-                  {ticket.notes.map((note) => (
-                    <div
-                      key={note.id}
-                      className="p-3 bg-ui-bg-subtle rounded border"
-                    >
-                      <div className="flex items-center justify-between mb-1">
-                        <Badge
-                          color={note.is_internal ? "orange" : "blue"}
-                          size="small"
-                        >
-                          {note.is_internal ? "Internal" : "Customer Visible"}
-                        </Badge>
-                        <Text size="xsmall" className="text-ui-fg-muted">
-                          {new Date(note.created_at).toLocaleString()}
-                        </Text>
-                      </div>
-                      <Text size="small">{note.content}</Text>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </Container>
-
-          {/* Chat */}
+          {/* Timeline & Communication */}
           <Container>
             <div className="flex items-center gap-2 mb-4">
               <ChatBubbleLeftRight size={20} />
-              <Heading level="h2">Customer Chat</Heading>
+              <Heading level="h2">Timeline & Communication</Heading>
             </div>
-            <div className="space-y-3">
-              {ticket.updates && ticket.updates.length > 0 && (
-                <div className="space-y-2 max-h-64 overflow-y-auto mb-3">
-                  {ticket.updates.map((update) => (
+            
+            <div className="space-y-4">
+              <div className="space-y-2 max-h-80 overflow-y-auto mb-4 border rounded bg-ui-bg-subtle/50 p-2">
+                {(() => {
+                  const items = [
+                    ...((ticket.notes || []) as any[]).map((n) => ({ ...n, entryType: "note" })),
+                    ...((ticket.updates || []) as any[]).map((u) => ({ ...u, entryType: "update" })),
+                  ].sort(
+                    (a, b) =>
+                      new Date(a.created_at).getTime() -
+                      new Date(b.created_at).getTime(),
+                  );
+                  
+                  if (items.length === 0) {
+                    return <Text className="text-ui-fg-muted p-2 text-center text-sm">No activity yet.</Text>;
+                  }
+
+                  return items.map((item) => (
                     <div
-                      key={update.id}
-                      className={`p-3 rounded ${
-                        update.author_type === "customer"
-                          ? "bg-ui-bg-subtle"
-                          : "bg-blue-50 ml-8"
+                      key={`${item.entryType}_${item.id}`}
+                      className={`p-3 rounded border bg-ui-bg-base ${
+                        item.entryType === "update" && item.author_type !== "customer" ? "ml-8" : 
+                        item.entryType === "update" && item.author_type === "customer" ? "mr-8" : ""
                       }`}
                     >
-                      <div className="flex items-center justify-between mb-1">
-                        <Badge size="small">
-                          {update.author_type === "customer"
-                            ? "Customer"
-                            : "Technician"}
-                        </Badge>
+                      <div className="flex items-center justify-between mb-2">
+                        {item.entryType === "note" ? (
+                          <Badge color={item.is_internal ? "orange" : "blue"} size="small">
+                            {item.is_internal ? "Internal Note" : "Public Note"}
+                          </Badge>
+                        ) : (
+                          <Badge color={item.author_type === "customer" ? "green" : "purple"} size="small">
+                            {item.author_type === "customer" ? "Customer Msg" : "Technician Msg"}
+                          </Badge>
+                        )}
                         <Text size="xsmall" className="text-ui-fg-muted">
-                          {new Date(update.created_at).toLocaleString()}
+                          {new Date(item.created_at).toLocaleString()}
                         </Text>
                       </div>
-                      <Text size="small">{update.message}</Text>
+                      <Text size="small" className="whitespace-pre-wrap">
+                        {item.entryType === "note" ? item.content : item.message}
+                      </Text>
                     </div>
-                  ))}
-                </div>
-              )}
+                  ));
+                })()}
+              </div>
 
-              <Textarea
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Type a message to customer..."
-                rows={2}
-              />
-              <Button
-                onClick={handleSendMessage}
-                variant="primary"
-                className="w-full"
-              >
-                Send Message
-              </Button>
+              <div className="flex flex-col gap-2 p-3 bg-ui-bg-subtle rounded border">
+                <Textarea
+                  value={unifiedMessage}
+                  onChange={(e) => setUnifiedMessage(e.target.value)}
+                  placeholder="Type a message or note..."
+                  rows={3}
+                  className="bg-ui-bg-base"
+                />
+                <div className="flex items-center gap-2 mt-2">
+                  <Select value={messageType} onValueChange={(val: any) => setMessageType(val)}>
+                    <Select.Trigger className="w-[180px] bg-ui-bg-base">
+                      <Select.Value />
+                    </Select.Trigger>
+                    <Select.Content>
+                      <Select.Item value="chat">Message Customer</Select.Item>
+                      <Select.Item value="internal_note">Internal Note</Select.Item>
+                      <Select.Item value="public_note">Public Note</Select.Item>
+                    </Select.Content>
+                  </Select>
+                  <Button
+                    onClick={handleSendUnified}
+                    variant="primary"
+                    className="flex-1"
+                  >
+                    Send / Add
+                  </Button>
+                </div>
+              </div>
             </div>
           </Container>
         </div>

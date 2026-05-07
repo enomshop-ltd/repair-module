@@ -92,6 +92,16 @@ export default async function repairStatusChangedHandler({
               `Product variant ${part.title} (${part.id}) has no inventory items linked.`,
             );
           }
+          
+          // Delete associated reservation
+          const [reservations] = await inventoryModule.listAndCountReservationItems({
+            line_item_id: `repair_${ticket.id}_${part.id}`
+          });
+          
+          if (reservations?.length) {
+            await inventoryModule.deleteReservationItems(reservations.map((r: any) => r.id));
+            logger.info(`Cleared reservation for variant ${part.title}`);
+          }
         }
       } else if (!inventoryModule) {
         logger.warn("Inventory module not registered, skipping auto-deduct.");
