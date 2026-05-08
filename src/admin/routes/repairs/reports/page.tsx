@@ -2,6 +2,7 @@ import { defineRouteConfig } from "@medusajs/admin-sdk";
 import { Container, Heading, Text } from "@medusajs/ui";
 import { ChartBar } from "@medusajs/icons";
 import { useEffect, useState } from "react";
+import { useStoreCurrency } from "../../../lib/use-store-currency";
 import {
   BarChart,
   Bar,
@@ -16,6 +17,7 @@ import {
 const ReportsPage = () => {
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const { formatCurrency } = useStoreCurrency();
 
   useEffect(() => {
     fetch(`/admin/repairs/analytics`, {
@@ -72,7 +74,7 @@ const ReportsPage = () => {
             Total Revenue (Estimated)
           </Text>
           <Heading level="h2" className="text-3xl">
-            ${(data.total_expected_revenue / 100).toFixed(2)}
+            {formatCurrency(data.total_expected_revenue)}
           </Heading>
         </div>
         <div className="p-6 border rounded-lg bg-ui-bg-base border-ui-border-base shadow-sm">

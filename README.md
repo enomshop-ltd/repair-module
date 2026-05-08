@@ -19,6 +19,10 @@ A complete Repair Management System for Medusa, ideal for device repair shops. F
 
 ## Changelog
 
+### v1.3.1 - Bug Fixes & Improvements
+- **Currency Formatting:** Created `useStoreCurrency` custom React hook. This hook fetches the configured `default_currency_code` and `supported_currencies` directly from Medusa (`/admin/stores`) to ensure dynamic native currency formats (like KES) are utilized across analytics, widgets, and tickets, instead of hardcoded USD "$".
+- **Icons Import Fix:** Fixed build error by changing out-of-date export `Bell` from `@medusajs/icons` to `BellAlert` in the repairs admin page.
+
 ### v1.3.0 - UI Simplification & Reminders
 - **Unified Timeline:** Merged "Internal Notes" and "Customer Chat" widgets into a single clean timeline view, distinguishing entries by color and labels in both the Admin Dashboard and the Fresh.js Storefront.
 - **Customer Reminders:** Replaced the "Print Job Card" and "Print Receipt" buttons with a single "Send Reminder" button.

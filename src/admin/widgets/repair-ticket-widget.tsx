@@ -1,6 +1,7 @@
 import { defineWidgetConfig } from "@medusajs/admin-sdk";
 import { Container, Heading, Badge, Text } from "@medusajs/ui";
 import { useEffect, useState } from "react";
+import { useStoreCurrency } from "../lib/use-store-currency";
 
 type RepairTicket = {
   id: string;
@@ -17,6 +18,7 @@ type RepairTicket = {
 const RepairTicketWidget = () => {
   const [tickets, setTickets] = useState<RepairTicket[]>([]);
   const [loading, setLoading] = useState(true);
+  const { formatCurrency } = useStoreCurrency();
 
   useEffect(() => {
     fetch(`/admin/repairs`, {
@@ -97,7 +99,7 @@ const RepairTicketWidget = () => {
                 </div>
                 <div className="text-right">
                   <Text className="font-medium">
-                    ${(ticket.total_estimate / 100).toFixed(2)}
+                    {formatCurrency(ticket.total_estimate)}
                   </Text>
                 </div>
               </div>

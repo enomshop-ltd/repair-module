@@ -15,6 +15,7 @@ import {
 } from "@medusajs/ui";
 import { useEffect, useState } from "react";
 import { Wrench } from "@medusajs/icons";
+import { useStoreCurrency } from "../../lib/use-store-currency";
 
 type RepairTicket = {
   id: string;
@@ -33,6 +34,7 @@ const RepairsPage = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const { formatCurrency } = useStoreCurrency();
 
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -539,7 +541,7 @@ const RepairsPage = () => {
                   {ticket.issue_description}
                 </Table.Cell>
                 <Table.Cell>
-                  ${(ticket.total_estimate / 100).toFixed(2)}
+                  {formatCurrency(ticket.total_estimate)}
                 </Table.Cell>
                 <Table.Cell>
                   {new Date(ticket.created_at).toLocaleDateString()}

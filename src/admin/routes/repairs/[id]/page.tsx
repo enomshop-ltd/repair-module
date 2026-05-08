@@ -14,6 +14,7 @@ import {
 } from "@medusajs/ui";
 import { useEffect, useState } from "react";
 import { ArrowUpRightOnBox, ChatBubbleLeftRight, Trash, BellAlert } from "@medusajs/icons";
+import { useStoreCurrency } from "../../../lib/use-store-currency";
 
 // Get id from URL path
 const useParams = () => {
@@ -86,6 +87,7 @@ const RepairDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const [ticket, setTicket] = useState<RepairTicket | null>(null);
   const [loading, setLoading] = useState(true);
+  const { formatCurrency } = useStoreCurrency();
 
   // Form states
   const [newStatus, setNewStatus] = useState("");
@@ -474,18 +476,18 @@ const RepairDetailPage = () => {
               <div className="flex justify-between">
                 <Text>Parts Estimate:</Text>
                 <Text className="font-medium">
-                  ${(ticket.parts_estimate / 100).toFixed(2)}
+                  {formatCurrency(ticket.parts_estimate)}
                 </Text>
               </div>
               <div className="flex justify-between">
                 <Text>Labor Estimate:</Text>
                 <Text className="font-medium">
-                  ${(ticket.labor_estimate / 100).toFixed(2)}
+                  {formatCurrency(ticket.labor_estimate)}
                 </Text>
               </div>
               <div className="flex justify-between text-lg font-semibold border-t pt-2">
                 <Text>Total Estimate:</Text>
-                <Text>${(ticket.total_estimate / 100).toFixed(2)}</Text>
+                <Text>{formatCurrency(ticket.total_estimate)}</Text>
               </div>
               {ticket.is_approved && (
                 <Badge color="green" size="small" className="mt-2">
@@ -540,7 +542,7 @@ const RepairDetailPage = () => {
                     >
                       <Text>{cp.name}</Text>
                       <Text className="font-medium">
-                        ${(cp.price / 100).toFixed(2)}
+                        {formatCurrency(cp.price)}
                       </Text>
                     </div>
                   ))}
@@ -805,7 +807,7 @@ const RepairDetailPage = () => {
 };
 
 export const config = defineRouteConfig({
-  label: "Repair Details",
+  label: "Repair Detail",
 });
 
 export default RepairDetailPage;
