@@ -805,7 +805,7 @@ const RepairDetailPage = () => {
 };
 
 export const config = defineRouteConfig({
-  label: "Repair Detail",
+  label: "Repair Details",
 });
 
 export default RepairDetailPage;
